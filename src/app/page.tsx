@@ -114,7 +114,7 @@ export default function MusicStudioPage() {
     soundEngine.setInstrument(instrument);
   }, [instrument]);
 
-  // Global Keyboard typing listener
+  // Global Keyboard typing listener (with Backspace & Delete support)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -122,6 +122,17 @@ export default function MusicStudioPage() {
         activeEl &&
         (activeEl.tagName === "TEXTAREA" || activeEl.tagName === "INPUT" || activeEl.tagName === "SELECT")
       ) {
+        return;
+      }
+
+      // Handle Backspace or Delete to remove selected note or last note
+      if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        if (selectedNoteIndex !== null) {
+          handleDeleteNote(selectedNoteIndex);
+        } else if (compiled.notes.length > 0) {
+          handleDeleteNote(compiled.notes.length - 1);
+        }
         return;
       }
 
@@ -156,7 +167,7 @@ export default function MusicStudioPage() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [keyMap]);
+  }, [keyMap, selectedNoteIndex, compiled.notes.length, code]);
 
   const handlePlay = () => {
     if (isPlaying) {
@@ -315,7 +326,7 @@ export default function MusicStudioPage() {
           </div>
           <div>
             <h1 className="font-semibold text-sm tracking-tight text-white flex items-center gap-2">
-              NoteScript Studio
+              Music
               <span className="text-[10px] font-mono font-medium px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/25">
                 Type-to-Compose
               </span>
