@@ -269,3 +269,4 @@ export function compileMusicCode(code: string): CompileResult {
     warnings,
   };
 }
+

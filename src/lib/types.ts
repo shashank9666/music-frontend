@@ -32,3 +32,4 @@ export interface Project {
 }
 
 export type SynthInstrument = "grand_piano" | "synth_lead" | "electric_organ" | "8bit_chiptune" | "ambient_pad";
+
