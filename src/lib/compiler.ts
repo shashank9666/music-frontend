@@ -1,4 +1,4 @@
-import { NoteEvent, CompileResult } from "../types";
+import { NoteEvent, CompileResult } from "./types";
 
 const DURATION_MAP: Record<string, number> = {
   "1": 4.0,
