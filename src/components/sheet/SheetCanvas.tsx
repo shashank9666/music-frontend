@@ -197,16 +197,18 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                     key={`rest-${idx}`}
                     onClick={() => onSelectNote(isSelected ? null : idx)}
                     transform={`translate(${x}, ${STAFF_TOP + 12})`}
-                    className="cursor-pointer group"
+                    className="cursor-pointer group pointer-events-auto"
+                    style={{ cursor: "pointer" }}
                   >
                     <rect
                       width="8"
                       height="15"
                       fill={isPlaying ? "#60a5fa" : isSelected ? "#f59e0b" : "#71717a"}
                       rx="2"
-                      className="transition-colors"
+                      className="transition-colors group-hover:fill-amber-400"
+                      style={{ cursor: "pointer" }}
                     />
-                    <text x="-4" y="26" className="text-[9px] fill-zinc-500 font-mono">𝄽</text>
+                    <text x="-4" y="26" className="text-[9px] fill-zinc-500 font-mono" style={{ cursor: "pointer" }}>𝄽</text>
                   </g>
                 );
               }
@@ -218,8 +220,19 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                 <g
                   key={`note-${idx}`}
                   onClick={() => onSelectNote(isSelected ? null : idx)}
-                  className="cursor-pointer group"
+                  className="cursor-pointer group pointer-events-auto"
+                  style={{ cursor: "pointer" }}
                 >
+                  {/* Invisible enlarged hit target for easy clicking */}
+                  <rect
+                    x={x - 10}
+                    y={Math.min(y - 30, STAFF_TOP - 10)}
+                    width={32}
+                    height={STAFF_HEIGHT + 60}
+                    fill="transparent"
+                    style={{ cursor: "pointer" }}
+                  />
+
                   {/* Clean, static selection glow (No spinning dotted circles) */}
                   {isSelected && (
                     <ellipse
@@ -230,6 +243,7 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                       fill="rgba(245, 158, 11, 0.15)"
                       stroke="#f59e0b"
                       strokeWidth="1.5"
+                      style={{ cursor: "pointer" }}
                     />
                   )}
 
@@ -281,6 +295,7 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                     strokeWidth={isWhole || isHalf ? "2.2" : "1"}
                     className="transition-all duration-100 group-hover:scale-110"
                     style={{
+                      cursor: "pointer",
                       filter: isPlaying
                         ? "drop-shadow(0 0 8px rgba(56, 189, 248, 0.8))"
                         : isSelected
@@ -304,6 +319,7 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                           : "#fafafa"
                       }
                       strokeWidth="1.6"
+                      style={{ cursor: "pointer" }}
                     />
                   )}
 
@@ -312,6 +328,7 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                     x={x + 4}
                     y={STAFF_TOP + STAFF_HEIGHT + 30}
                     textAnchor="middle"
+                    style={{ cursor: "pointer" }}
                     className={`text-[10px] font-mono font-medium transition-colors ${
                       isPlaying
                         ? "fill-sky-400 font-bold"
