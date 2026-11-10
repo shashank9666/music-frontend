@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { SheetCanvas } from "@/components/sheet/SheetCanvas";
 import { PianoKeyboard } from "@/components/piano/PianoKeyboard";
 import { BuildingBlocks } from "@/components/editor/BuildingBlocks";
+import { KeyMappingPanel, DEFAULT_KEY_MAP, KeyMap } from "@/components/editor/KeyMappingPanel";
 import { compileMusicCode } from "@/lib/compiler";
 import { soundEngine } from "@/lib/soundEngine";
 import { CompileResult, SynthInstrument } from "@/lib/types";
@@ -17,6 +18,8 @@ import {
   Save,
   Music2,
   HelpCircle,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 const DEMO_COMPOSITIONS = [
@@ -90,6 +93,13 @@ export default function MusicStudioPage() {
   const [loopPlayback, setLoopPlayback] = useState<boolean>(false);
   const [showDocs, setShowDocs] = useState<boolean>(false);
 
+  // Keyboard mapping state
+  const [keyMap, setKeyMap] = useState<KeyMap>(DEFAULT_KEY_MAP);
+  const [activePressedKey, setActivePressedKey] = useState<string | null>(null);
+
+  // Selected note index on the sheet music
+  const [selectedNoteIndex, setSelectedNoteIndex] = useState<number | null>(null);
+
   const playbackTimerRef = useRef<NodeJS.Timeout | null>(null);
   const scheduledNotesRef = useRef<Set<number>>(new Set());
 
@@ -105,6 +115,51 @@ export default function MusicStudioPage() {
     soundEngine.setInstrument(instrument);
   }, [instrument]);
 
+  // Global Keyboard typing listener: press 'a', 's', 'd' etc to type notes!
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept when user is typing inside code textarea or input
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "TEXTAREA" || activeEl.tagName === "INPUT" || activeEl.tagName === "SELECT")
+      ) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      if (keyMap[key]) {
+        e.preventDefault();
+        setActivePressedKey(key);
+        const pitch = keyMap[key];
+
+        if (pitch === "REST") {
+          handleAppendCode("rest 1/4\n");
+        } else {
+          soundEngine.playTone(pitch, 0.4);
+          setActivePitch(pitch);
+          handleAppendCode(`play ${pitch} 1/4\n`);
+          setTimeout(() => setActivePitch(null), 300);
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (keyMap[key]) {
+        setActivePressedKey(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [keyMap]);
+
   const handlePlay = () => {
     if (isPlaying) {
       handleStop();
@@ -118,7 +173,7 @@ export default function MusicStudioPage() {
     scheduledNotesRef.current.clear();
 
     const secPerBeat = 60.0 / tempo;
-    const intervalMs = 25; // Accurate scheduling
+    const intervalMs = 25;
 
     playbackTimerRef.current = setInterval(() => {
       const elapsedSec = (performance.now() - startTimestamp) / 1000;
@@ -166,6 +221,74 @@ export default function MusicStudioPage() {
     setCode((prev) => prev.trimEnd() + "\n" + snippet);
   };
 
+  // Sheet Music Direct Editing Handlers
+  const handleUpdateNotePitch = (index: number, newPitch: string) => {
+    // Find all 'play' or note statements and update the n-th note
+    const lines = code.split("\n");
+    let noteCounter = 0;
+    const newLines = lines.map((l) => {
+      const trimmed = l.trim();
+      if (trimmed.startsWith("play ") || /^[A-Ga-g][#b]?-?\d+/.test(trimmed) || trimmed.startsWith("rest ")) {
+        if (noteCounter === index) {
+          noteCounter++;
+          const parts = trimmed.split(/\s+/);
+          const dur = parts[2] || (parts[0].startsWith("play") ? parts[2] || "1/4" : parts[1] || "1/4");
+          if (newPitch === "REST") {
+            return `rest ${dur}`;
+          }
+          return `play ${newPitch} ${dur}`;
+        }
+        noteCounter++;
+      }
+      return l;
+    });
+    setCode(newLines.join("\n"));
+    if (newPitch !== "REST") {
+      soundEngine.playTone(newPitch, 0.4);
+    }
+  };
+
+  const handleUpdateNoteDuration = (index: number, newDuration: number) => {
+    const durStr = newDuration === 4.0 ? "1/1" : newDuration === 2.0 ? "1/2" : newDuration === 0.5 ? "1/8" : newDuration === 0.25 ? "1/16" : "1/4";
+    const lines = code.split("\n");
+    let noteCounter = 0;
+    const newLines = lines.map((l) => {
+      const trimmed = l.trim();
+      if (trimmed.startsWith("play ") || /^[A-Ga-g][#b]?-?\d+/.test(trimmed) || trimmed.startsWith("rest ")) {
+        if (noteCounter === index) {
+          noteCounter++;
+          const parts = trimmed.split(/\s+/);
+          if (trimmed.startsWith("rest")) {
+            return `rest ${durStr}`;
+          }
+          const pitch = parts[0].startsWith("play") ? parts[1] : parts[0];
+          return `play ${pitch} ${durStr}`;
+        }
+        noteCounter++;
+      }
+      return l;
+    });
+    setCode(newLines.join("\n"));
+  };
+
+  const handleDeleteNote = (index: number) => {
+    const lines = code.split("\n");
+    let noteCounter = 0;
+    const newLines = lines.filter((l) => {
+      const trimmed = l.trim();
+      if (trimmed.startsWith("play ") || /^[A-Ga-g][#b]?-?\d+/.test(trimmed) || trimmed.startsWith("rest ")) {
+        if (noteCounter === index) {
+          noteCounter++;
+          return false; // remove line
+        }
+        noteCounter++;
+      }
+      return true;
+    });
+    setCode(newLines.join("\n"));
+    setSelectedNoteIndex(null);
+  };
+
   const handleSaveToBackend = async () => {
     const res = await saveProject({
       title: compiled.title,
@@ -197,11 +320,11 @@ export default function MusicStudioPage() {
             <h1 className="font-bold text-base tracking-tight flex items-center gap-2">
               NoteScript Studio
               <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                Programmable Sheet Music
+                Type-to-Compose
               </span>
             </h1>
             <p className="text-xs text-zinc-400">
-              Code-as-Music &bull; Building Blocks &bull; Live Synthesizer
+              Interactive Sheet Editor &bull; Custom Key Mappings &bull; Synthesizer
             </p>
           </div>
         </div>
@@ -214,6 +337,7 @@ export default function MusicStudioPage() {
               if (found) {
                 handleStop();
                 setCode(found.code);
+                setSelectedNoteIndex(null);
               }
             }}
             className="bg-zinc-800 border border-zinc-700 text-xs text-zinc-200 px-3 py-1.5 rounded-xl hover:bg-zinc-700 transition cursor-pointer outline-none"
@@ -243,7 +367,7 @@ export default function MusicStudioPage() {
             onClick={() => setShowDocs(!showDocs)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 transition"
           >
-            <HelpCircle className="w-3.5 h-3.5" /> Syntax Guide
+            <HelpCircle className="w-3.5 h-3.5" /> Guide
           </button>
         </div>
       </header>
@@ -322,15 +446,15 @@ export default function MusicStudioPage() {
           </div>
         </div>
 
-        {/* Live Interactive Sheet Music Display */}
+        {/* Dynamic Sheet Music Visualizer & Direct Click-to-Edit */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold tracking-wide text-zinc-300 flex items-center gap-2">
               <Music2 className="w-4 h-4 text-amber-400" />
-              Dynamic Sheet Music Notation
+              Interactive Sheet Music (Click any note to edit/delete)
             </h2>
             <span className="text-xs text-zinc-400">
-              Rendered from code &bull; Real-time Playhead
+              Click any notehead on the staff to change pitch, duration, or delete
             </span>
           </div>
 
@@ -338,13 +462,35 @@ export default function MusicStudioPage() {
             notes={compiled.notes}
             activeBeat={activeBeat}
             timeSignature={compiled.time_signature}
-            onNoteClick={(n) => {
-              soundEngine.playTone(n.pitch, 0.5);
-              setActivePitch(n.pitch);
-              setTimeout(() => setActivePitch(null), 400);
+            selectedIndex={selectedNoteIndex}
+            onSelectNote={(idx) => {
+              setSelectedNoteIndex(idx);
+              if (idx !== null && compiled.notes[idx]) {
+                const n = compiled.notes[idx];
+                soundEngine.playTone(n.pitch, 0.4);
+                setActivePitch(n.pitch);
+                setTimeout(() => setActivePitch(null), 300);
+              }
             }}
+            onUpdateNotePitch={handleUpdateNotePitch}
+            onUpdateNoteDuration={handleUpdateNoteDuration}
+            onDeleteNote={handleDeleteNote}
           />
         </div>
+
+        {/* Keyboard Typing & Note Mapping Bar */}
+        <KeyMappingPanel
+          keyMap={keyMap}
+          onUpdateKeyMap={setKeyMap}
+          activeKey={activePressedKey}
+          onKeyType={(pitch) => {
+            if (pitch === "REST") {
+              handleAppendCode("rest 1/4\n");
+            } else {
+              handleAppendCode(`play ${pitch} 1/4\n`);
+            }
+          }}
+        />
 
         {/* Interactive Piano Preview */}
         <PianoKeyboard
@@ -360,11 +506,11 @@ export default function MusicStudioPage() {
               <div className="flex items-center gap-2">
                 <Code2 className="w-4 h-4 text-amber-400" />
                 <span className="text-xs font-semibold text-zinc-200 font-mono">
-                  {compiled.title}.ns &bull; Music Code Editor
+                  {compiled.title}.ns &bull; Live Code Editor
                 </span>
               </div>
               <span className="text-[11px] text-zinc-500 font-mono">
-                Auto-compiles instantly
+                Two-way sync with Sheet Music
               </span>
             </div>
 
@@ -374,7 +520,7 @@ export default function MusicStudioPage() {
               rows={14}
               spellCheck={false}
               className="w-full bg-[#121214] text-zinc-200 font-mono text-sm p-4 outline-none resize-none focus:ring-1 focus:ring-amber-500/30 leading-relaxed"
-              placeholder="// Write music code here... e.g.:&#10;tempo 120&#10;play C4 1/4&#10;chord [C4,E4,G4] 1/2"
+              placeholder="// Write music code or type keys (A, S, D, F, etc.)..."
             />
 
             {compiled.warnings.length > 0 && (
@@ -397,7 +543,7 @@ export default function MusicStudioPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <h3 className="font-bold text-sm text-zinc-100 flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-amber-400" /> NoteScript Programming Reference
+                <HelpCircle className="w-4 h-4 text-amber-400" /> NoteScript Programming & Typing Guide
               </h3>
               <button
                 onClick={() => setShowDocs(false)}
@@ -409,36 +555,30 @@ export default function MusicStudioPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono text-zinc-300">
               <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
-                <div className="font-bold text-amber-400">Note & Pitch Commands:</div>
-                <div><code className="text-zinc-100">play C4 1/4</code> - Plays C4 quarter note</div>
-                <div><code className="text-zinc-100">play F#4 1/8</code> - Sharp / flat notes</div>
-                <div><code className="text-zinc-100">rest 1/4</code> - Quarter rest pause</div>
-                <div><code className="text-zinc-100">play E4 1/4.</code> - Dotted note (1.5x length)</div>
+                <div className="font-bold text-amber-400">Typing Directly on Keyboard:</div>
+                <div>• Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-300">A</kbd> for C4, <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-300">S</kbd> for D4, <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-300">D</kbd> for E4, etc.</div>
+                <div>• Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-300">Space</kbd> for a Rest.</div>
+                <div>• Click any key on the **Keyboard Typing & Note Map** panel to remap it to any octave/pitch.</div>
+              </div>
+
+              <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                <div className="font-bold text-amber-400">Direct Sheet Music Editing:</div>
+                <div>• Click on any note directly on the staff to select it.</div>
+                <div>• An inline editor appears allowing you to change pitch, note length, or delete.</div>
+                <div>• Changes instantly update the code and audio in real time.</div>
               </div>
 
               <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
                 <div className="font-bold text-amber-400">Chords & Arpeggios:</div>
-                <div><code className="text-zinc-100">chord C4:maj 1/2</code> - C Major triad</div>
-                <div><code className="text-zinc-100">chord A3:min7 1/2</code> - A Minor 7th chord</div>
-                <div><code className="text-zinc-100">chord [C4,E4,G4,B4] 1/2</code> - Custom polyphony</div>
-                <div><code className="text-zinc-100">arp C4:maj 1/8</code> - Broken arpeggio sequence</div>
+                <div><code className="text-zinc-100">chord C4:maj 1/2</code> - Major Triad</div>
+                <div><code className="text-zinc-100">arp A3:min 1/8</code> - Arpeggio sequence</div>
+                <div><code className="text-zinc-100">loop 2 &#123; ... &#125;</code> - Loop block</div>
               </div>
 
               <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
-                <div className="font-bold text-amber-400">Loops & Repeats:</div>
-                <pre className="text-zinc-300">
-{`loop 4 {
-    play C4 1/8
-    play G4 1/8
-}`}
-                </pre>
-              </div>
-
-              <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
-                <div className="font-bold text-amber-400">Song Configuration:</div>
-                <div><code className="text-zinc-100">title "My Song"</code> - Song title</div>
-                <div><code className="text-zinc-100">tempo 128</code> - Beats per minute</div>
-                <div><code className="text-zinc-100">meter 4/4</code> - Time signature (3/4, 6/8, etc.)</div>
+                <div className="font-bold text-amber-400">Song Parameters:</div>
+                <div><code className="text-zinc-100">tempo 120</code> - BPM</div>
+                <div><code className="text-zinc-100">meter 4/4</code> - Time Signature</div>
               </div>
             </div>
           </div>
