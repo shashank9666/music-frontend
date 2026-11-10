@@ -490,12 +490,6 @@ export default function MusicStudioPage() {
           }}
         />
 
-        {/* Interactive Piano Preview */}
-        <PianoKeyboard
-          activePitch={activePitch}
-          onInsertNote={(pitch) => handleAppendCode(`play ${pitch} 1/4\n`)}
-        />
-
         {/* Studio Workspace: Code Editor on Left, Building Blocks on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Code Editor */}
