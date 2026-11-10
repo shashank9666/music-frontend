@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Keyboard, Settings2, RotateCcw, Volume2, Check } from "lucide-react";
+import { Keyboard, RotateCcw } from "lucide-react";
 import { soundEngine } from "@/lib/soundEngine";
 
 export interface KeyMap {
-  [key: string]: string; // e.g. 'a': 'C4', 's': 'D4'
+  [key: string]: string;
 }
 
 export const DEFAULT_KEY_MAP: KeyMap = {
@@ -33,6 +33,7 @@ interface KeyMappingPanelProps {
   keyMap: KeyMap;
   onUpdateKeyMap: (newMap: KeyMap) => void;
   activeKey: string | null;
+  currentlyPlayingPitch?: string | null;
   onKeyType: (note: string) => void;
 }
 
@@ -47,6 +48,7 @@ export const KeyMappingPanel: React.FC<KeyMappingPanelProps> = ({
   keyMap,
   onUpdateKeyMap,
   activeKey,
+  currentlyPlayingPitch,
   onKeyType,
 }) => {
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -68,36 +70,37 @@ export const KeyMappingPanel: React.FC<KeyMappingPanelProps> = ({
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+    <div className="glass-panel rounded-3xl p-5 shadow-2xl flex flex-col gap-3.5 border border-white/10">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
+      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 shadow-inner">
             <Keyboard className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-200 flex items-center gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-200 flex items-center gap-2">
               Keyboard Typing & Note Map
             </h3>
             <p className="text-[11px] text-zinc-400">
-              Type on your keyboard to instantly insert notes onto the music sheet! Click any key below to customize its note.
+              Type keys on your keyboard to instantly add notes. Click any key below to customize its note.
             </p>
           </div>
         </div>
 
         <button
           onClick={handleReset}
-          className="flex items-center gap-1 text-[11px] font-medium text-zinc-400 hover:text-amber-400 bg-zinc-800/80 hover:bg-zinc-800 px-2.5 py-1.5 rounded-lg border border-zinc-700/60 transition"
-          title="Reset to standard piano keyboard mapping"
+          className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 hover:text-white glass-pill px-3 py-1.5 rounded-xl transition hover:bg-white/10"
+          title="Reset to default key mapping"
         >
-          <RotateCcw className="w-3 h-3" /> Reset Map
+          <RotateCcw className="w-3 h-3" /> Reset
         </button>
       </div>
 
-      {/* Interactive Key Grid */}
-      <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-18 gap-1.5 max-h-[160px] overflow-y-auto pr-1 py-1">
+      {/* Interactive Key Grid with Glassmorphic Keys */}
+      <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-18 gap-2 max-h-[160px] overflow-y-auto pr-1 py-1">
         {Object.entries(keyMap).map(([charKey, pitch]) => {
           const isPressed = activeKey === charKey.toLowerCase();
+          const isNotePlaying = currentlyPlayingPitch === pitch && pitch !== "REST";
           const isSpace = charKey === " ";
           const displayChar = isSpace ? "Space (Rest)" : charKey.toUpperCase();
           const isEditing = editingKey === charKey;
@@ -110,23 +113,27 @@ export const KeyMappingPanel: React.FC<KeyMappingPanelProps> = ({
                   onKeyType(pitch);
                   setEditingKey(isEditing ? null : charKey);
                 }}
-                className={`w-full flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
-                  isPressed
-                    ? "bg-blue-600 border-blue-400 text-white scale-95 shadow-lg shadow-blue-500/30"
+                className={`w-full flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl border text-center transition-all duration-100 ${
+                  isPressed || isNotePlaying
+                    ? "bg-sky-500/30 border-sky-400 text-white scale-95 shadow-[0_0_15px_rgba(56,189,248,0.5)]"
                     : isEditing
-                    ? "bg-amber-500/20 border-amber-400 text-amber-300"
+                    ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]"
                     : pitch === "REST"
-                    ? "bg-zinc-800/60 border-zinc-700/60 text-zinc-400 hover:border-zinc-500"
-                    : "bg-zinc-800/90 hover:bg-zinc-750 border-zinc-700 hover:border-blue-400/50 text-zinc-200"
+                    ? "glass-card text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                    : "glass-card hover:bg-white/[0.08] hover:border-white/20 text-zinc-200"
                 }`}
-                title={`Press '${charKey}' or click to type ${pitch}. Click to edit note.`}
+                title={`Key '${charKey}': ${pitch}`}
               >
                 <span className="text-[11px] font-bold font-mono text-zinc-300">
                   {displayChar}
                 </span>
                 <span
                   className={`text-[10px] font-semibold font-mono mt-0.5 ${
-                    pitch === "REST" ? "text-amber-400" : "text-blue-400"
+                    isNotePlaying
+                      ? "text-sky-300 font-extrabold"
+                      : pitch === "REST"
+                      ? "text-amber-400/80"
+                      : "text-sky-400"
                   }`}
                 >
                   {pitch}
@@ -135,8 +142,8 @@ export const KeyMappingPanel: React.FC<KeyMappingPanelProps> = ({
 
               {/* Edit Note Dropdown */}
               {isEditing && (
-                <div className="absolute top-full left-0 mt-1 z-50 bg-zinc-950 border border-zinc-700 rounded-xl p-2 shadow-2xl w-36 max-h-48 overflow-y-auto">
-                  <div className="text-[10px] font-bold text-zinc-400 pb-1 mb-1 border-b border-zinc-800 flex items-center justify-between">
+                <div className="absolute top-full left-0 mt-2 z-50 glass-panel border border-white/20 rounded-2xl p-2.5 shadow-2xl w-36 max-h-48 overflow-y-auto">
+                  <div className="text-[10px] font-bold text-zinc-400 pb-1.5 mb-1.5 border-b border-white/10 flex items-center justify-between">
                     <span>Map '{displayChar}' to:</span>
                     <button
                       onClick={() => setEditingKey(null)}
@@ -153,10 +160,10 @@ export const KeyMappingPanel: React.FC<KeyMappingPanelProps> = ({
                           e.stopPropagation();
                           handleNoteChange(charKey, n);
                         }}
-                        className={`text-[10px] font-mono py-1 px-1.5 rounded text-left transition ${
+                        className={`text-[10px] font-mono py-1 px-1.5 rounded-lg text-left transition ${
                           n === pitch
-                            ? "bg-blue-600 text-white font-bold"
-                            : "hover:bg-zinc-800 text-zinc-300"
+                            ? "bg-sky-500 text-white font-bold shadow-sm"
+                            : "hover:bg-white/10 text-zinc-300"
                         }`}
                       >
                         {n}
@@ -172,4 +179,3 @@ export const KeyMappingPanel: React.FC<KeyMappingPanelProps> = ({
     </div>
   );
 };
-

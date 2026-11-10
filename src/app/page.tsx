@@ -18,8 +18,7 @@ import {
   Save,
   Music2,
   HelpCircle,
-  Plus,
-  Trash2,
+  SlidersHorizontal,
 } from "lucide-react";
 
 const DEMO_COMPOSITIONS = [
@@ -115,10 +114,9 @@ export default function MusicStudioPage() {
     soundEngine.setInstrument(instrument);
   }, [instrument]);
 
-  // Global Keyboard typing listener: press 'a', 's', 'd' etc to type notes!
+  // Global Keyboard typing listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept when user is typing inside code textarea or input
       const activeEl = document.activeElement;
       if (
         activeEl &&
@@ -223,7 +221,6 @@ export default function MusicStudioPage() {
 
   // Sheet Music Direct Editing Handlers
   const handleUpdateNotePitch = (index: number, newPitch: string) => {
-    // Find all 'play' or note statements and update the n-th note
     const lines = code.split("\n");
     let noteCounter = 0;
     const newLines = lines.map((l) => {
@@ -279,7 +276,7 @@ export default function MusicStudioPage() {
       if (trimmed.startsWith("play ") || /^[A-Ga-g][#b]?-?\d+/.test(trimmed) || trimmed.startsWith("rest ")) {
         if (noteCounter === index) {
           noteCounter++;
-          return false; // remove line
+          return false;
         }
         noteCounter++;
       }
@@ -298,9 +295,9 @@ export default function MusicStudioPage() {
       code: code,
     });
     if (res) {
-      alert(`Saved composition "${compiled.title}" successfully to backend database!`);
+      alert(`Saved composition "${compiled.title}" to backend database!`);
     } else {
-      alert("Note: Saved locally. Backend server can be started anytime with `uvicorn app.main:app`.");
+      alert("Note: Saved locally. Start backend with `backend\\run.bat` for database persistence.");
     }
   };
 
@@ -309,28 +306,28 @@ export default function MusicStudioPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans">
-      {/* Top Navigation Bar */}
-      <header className="border-b border-zinc-800 bg-zinc-900/60 backdrop-blur-md px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-orange-500/20">
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-sky-500/30 selection:text-white">
+      {/* Apple-style Glassmorphic Navigation Bar */}
+      <header className="border-b border-white/[0.08] bg-zinc-950/60 backdrop-blur-2xl px-6 py-3.5 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2 rounded-2xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 text-white shadow-lg shadow-sky-500/25 border border-white/20">
             <Music2 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-base tracking-tight flex items-center gap-2">
+            <h1 className="font-semibold text-sm tracking-tight text-white flex items-center gap-2">
               NoteScript Studio
-              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span className="text-[10px] font-mono font-medium px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/25">
                 Type-to-Compose
               </span>
             </h1>
-            <p className="text-xs text-zinc-400">
-              Interactive Sheet Editor &bull; Custom Key Mappings &bull; Synthesizer
+            <p className="text-[11px] text-zinc-400 font-normal">
+              Glassmorphic Sheet Editor &bull; Real-time Synthesis
             </p>
           </div>
         </div>
 
-        {/* Global Action Buttons */}
-        <div className="flex items-center gap-3">
+        {/* Global Action Controls */}
+        <div className="flex items-center gap-2.5">
           <select
             onChange={(e) => {
               const found = DEMO_COMPOSITIONS.find((d) => d.name === e.target.value);
@@ -340,32 +337,32 @@ export default function MusicStudioPage() {
                 setSelectedNoteIndex(null);
               }
             }}
-            className="bg-zinc-800 border border-zinc-700 text-xs text-zinc-200 px-3 py-1.5 rounded-xl hover:bg-zinc-700 transition cursor-pointer outline-none"
+            className="glass-pill text-xs text-zinc-200 px-3.5 py-1.5 rounded-xl hover:bg-white/10 transition cursor-pointer outline-none font-medium"
           >
             {DEMO_COMPOSITIONS.map((d) => (
-              <option key={d.name} value={d.name}>
-                Template: {d.name}
+              <option key={d.name} value={d.name} className="bg-zinc-900 text-zinc-100">
+                {d.name}
               </option>
             ))}
           </select>
 
           <button
             onClick={handleSaveToBackend}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 transition"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium glass-pill text-zinc-300 hover:text-white hover:bg-white/10 transition"
           >
             <Save className="w-3.5 h-3.5 text-zinc-400" /> Save
           </button>
 
           <button
             onClick={handleExportMidi}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 transition"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium glass-pill text-sky-400 hover:text-sky-300 hover:bg-white/10 transition"
           >
-            <Download className="w-3.5 h-3.5 text-amber-400" /> Export MIDI
+            <Download className="w-3.5 h-3.5" /> MIDI
           </button>
 
           <button
             onClick={() => setShowDocs(!showDocs)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 transition"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium glass-pill text-zinc-300 hover:text-white hover:bg-white/10 transition"
           >
             <HelpCircle className="w-3.5 h-3.5" /> Guide
           </button>
@@ -375,33 +372,33 @@ export default function MusicStudioPage() {
       {/* Main Studio Viewport */}
       <main className="flex-1 flex flex-col p-6 gap-6 max-w-7xl w-full mx-auto">
         {/* Playback Controls & Transport Bar */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+        <div className="glass-panel rounded-3xl p-4.5 flex flex-wrap items-center justify-between gap-4 shadow-2xl border border-white/10">
           <div className="flex items-center gap-3">
             <button
               onClick={handlePlay}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold text-xs tracking-wide transition-all shadow-lg duration-150 ${
                 isPlaying
-                  ? "bg-red-500 hover:bg-red-600 text-white shadow-red-500/20"
-                  : "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20"
+                  ? "bg-red-500/90 hover:bg-red-500 text-white shadow-red-500/20"
+                  : "bg-sky-500 hover:bg-sky-400 text-white shadow-sky-500/30"
               }`}
             >
               {isPlaying ? (
                 <>
-                  <Square className="w-4 h-4 fill-current" /> Stop
+                  <Square className="w-3.5 h-3.5 fill-current" /> Stop
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4 fill-current" /> Play Sheet
+                  <Play className="w-3.5 h-3.5 fill-current" /> Play Sheet
                 </>
               )}
             </button>
 
             <button
               onClick={() => setLoopPlayback(!loopPlayback)}
-              className={`p-2.5 rounded-xl border transition ${
+              className={`p-2.5 rounded-2xl border transition-all ${
                 loopPlayback
-                  ? "bg-amber-500/20 border-amber-500 text-amber-400"
-                  : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                  ? "bg-amber-500/20 border-amber-500/50 text-amber-400"
+                  : "glass-pill text-zinc-400 hover:text-zinc-200 hover:bg-white/10"
               }`}
               title="Toggle Loop"
             >
@@ -410,51 +407,51 @@ export default function MusicStudioPage() {
           </div>
 
           {/* Instrument Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-400 font-medium">Instrument:</span>
+          <div className="flex items-center gap-2.5">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
             <select
               value={instrument}
               onChange={(e) => setInstrument(e.target.value as SynthInstrument)}
-              className="bg-zinc-800 border border-zinc-700 text-xs text-zinc-200 px-3 py-1.5 rounded-xl outline-none"
+              className="glass-pill text-xs text-zinc-200 px-3 py-1.5 rounded-xl outline-none cursor-pointer"
             >
-              <option value="grand_piano">Grand Piano (Warm)</option>
-              <option value="synth_lead">Synth Lead (Sawtooth)</option>
-              <option value="electric_organ">Electric Organ (Pure)</option>
-              <option value="ambient_pad">Ambient Pad (Slow)</option>
-              <option value="8bit_chiptune">8-Bit Chiptune (Square)</option>
+              <option value="grand_piano" className="bg-zinc-900">Grand Piano (Warm)</option>
+              <option value="synth_lead" className="bg-zinc-900">Synth Lead (Sawtooth)</option>
+              <option value="electric_organ" className="bg-zinc-900">Electric Organ (Pure)</option>
+              <option value="ambient_pad" className="bg-zinc-900">Ambient Pad (Slow)</option>
+              <option value="8bit_chiptune" className="bg-zinc-900">8-Bit Chiptune (Square)</option>
             </select>
           </div>
 
-          {/* Tempo & Meter Stats */}
-          <div className="flex items-center gap-4 text-xs font-mono">
-            <div className="flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-zinc-700/60">
-              <span className="text-zinc-400">TEMPO:</span>
-              <span className="font-bold text-amber-400">{tempo} BPM</span>
+          {/* Metrics Pill Indicators */}
+          <div className="flex items-center gap-2.5 text-xs font-mono">
+            <div className="glass-pill px-3 py-1 rounded-xl">
+              <span className="text-zinc-400 text-[11px]">BPM: </span>
+              <span className="font-bold text-sky-400">{tempo}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-zinc-700/60">
-              <span className="text-zinc-400">METER:</span>
+            <div className="glass-pill px-3 py-1 rounded-xl">
+              <span className="text-zinc-400 text-[11px]">METER: </span>
               <span className="font-bold text-zinc-200">{compiled.time_signature}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-zinc-700/60">
-              <span className="text-zinc-400">NOTES:</span>
-              <span className="font-bold text-blue-400">{compiled.notes.length}</span>
+            <div className="glass-pill px-3 py-1 rounded-xl">
+              <span className="text-zinc-400 text-[11px]">NOTES: </span>
+              <span className="font-bold text-sky-400">{compiled.notes.length}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-zinc-700/60">
-              <span className="text-zinc-400">DURATION:</span>
+            <div className="glass-pill px-3 py-1 rounded-xl">
+              <span className="text-zinc-400 text-[11px]">TIME: </span>
               <span className="font-bold text-zinc-200">{compiled.total_duration_sec}s</span>
             </div>
           </div>
         </div>
 
-        {/* Dynamic Sheet Music Visualizer & Direct Click-to-Edit */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold tracking-wide text-zinc-300 flex items-center gap-2">
-              <Music2 className="w-4 h-4 text-amber-400" />
-              Interactive Sheet Music (Click any note to edit/delete)
+        {/* Dynamic Sheet Music Visualizer with Apple Glass Look */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-semibold tracking-wider uppercase text-zinc-300 flex items-center gap-2">
+              <Music2 className="w-3.5 h-3.5 text-sky-400" />
+              Dynamic Sheet Music Notation
             </h2>
-            <span className="text-xs text-zinc-400">
-              Click any notehead on the staff to change pitch, duration, or delete
+            <span className="text-[11px] text-zinc-500">
+              Click any notehead on the staff to edit or delete
             </span>
           </div>
 
@@ -483,6 +480,7 @@ export default function MusicStudioPage() {
           keyMap={keyMap}
           onUpdateKeyMap={setKeyMap}
           activeKey={activePressedKey}
+          currentlyPlayingPitch={activePitch}
           onKeyType={(pitch) => {
             if (pitch === "REST") {
               handleAppendCode("rest 1/4\n");
@@ -501,16 +499,16 @@ export default function MusicStudioPage() {
         {/* Studio Workspace: Code Editor on Left, Building Blocks on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Code Editor */}
-          <div className="lg:col-span-2 flex flex-col bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-lg">
-            <div className="bg-zinc-900/90 border-b border-zinc-800 px-4 py-2.5 flex items-center justify-between">
+          <div className="lg:col-span-2 flex flex-col glass-panel rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+            <div className="border-b border-white/5 px-5 py-3 flex items-center justify-between bg-white/[0.02]">
               <div className="flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-amber-400" />
+                <Code2 className="w-4 h-4 text-sky-400" />
                 <span className="text-xs font-semibold text-zinc-200 font-mono">
-                  {compiled.title}.ns &bull; Live Code Editor
+                  {compiled.title}.ns &bull; Music Code Editor
                 </span>
               </div>
               <span className="text-[11px] text-zinc-500 font-mono">
-                Two-way sync with Sheet Music
+                Two-way sync
               </span>
             </div>
 
@@ -519,7 +517,7 @@ export default function MusicStudioPage() {
               onChange={(e) => setCode(e.target.value)}
               rows={14}
               spellCheck={false}
-              className="w-full bg-[#121214] text-zinc-200 font-mono text-sm p-4 outline-none resize-none focus:ring-1 focus:ring-amber-500/30 leading-relaxed"
+              className="w-full bg-black/25 text-zinc-200 font-mono text-sm p-4 outline-none resize-none focus:ring-1 focus:ring-sky-500/30 leading-relaxed"
               placeholder="// Write music code or type keys (A, S, D, F, etc.)..."
             />
 
@@ -540,10 +538,10 @@ export default function MusicStudioPage() {
 
         {/* Syntax Quick Reference Modal */}
         {showDocs && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+          <div className="glass-panel rounded-3xl p-6 space-y-4 border border-white/10">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h3 className="font-bold text-sm text-zinc-100 flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-amber-400" /> NoteScript Programming & Typing Guide
+                <HelpCircle className="w-4 h-4 text-sky-400" /> NoteScript Guide
               </h3>
               <button
                 onClick={() => setShowDocs(false)}
@@ -554,31 +552,17 @@ export default function MusicStudioPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono text-zinc-300">
-              <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
-                <div className="font-bold text-amber-400">Typing Directly on Keyboard:</div>
-                <div>• Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-300">A</kbd> for C4, <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-300">S</kbd> for D4, <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-300">D</kbd> for E4, etc.</div>
-                <div>• Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-300">Space</kbd> for a Rest.</div>
-                <div>• Click any key on the **Keyboard Typing & Note Map** panel to remap it to any octave/pitch.</div>
+              <div className="glass-card p-3 rounded-2xl space-y-2">
+                <div className="font-bold text-sky-400">Typing on Keyboard:</div>
+                <div>• Press <kbd className="px-1.5 py-0.5 glass-pill rounded text-sky-300">A</kbd> for C4, <kbd className="px-1.5 py-0.5 glass-pill rounded text-sky-300">S</kbd> for D4, <kbd className="px-1.5 py-0.5 glass-pill rounded text-sky-300">D</kbd> for E4, etc.</div>
+                <div>• Press <kbd className="px-1.5 py-0.5 glass-pill rounded text-sky-300">Space</kbd> for a Rest.</div>
+                <div>• Click any key on the map panel to remap it.</div>
               </div>
 
-              <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
-                <div className="font-bold text-amber-400">Direct Sheet Music Editing:</div>
+              <div className="glass-card p-3 rounded-2xl space-y-2">
+                <div className="font-bold text-sky-400">Direct Sheet Music Editing:</div>
                 <div>• Click on any note directly on the staff to select it.</div>
                 <div>• An inline editor appears allowing you to change pitch, note length, or delete.</div>
-                <div>• Changes instantly update the code and audio in real time.</div>
-              </div>
-
-              <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
-                <div className="font-bold text-amber-400">Chords & Arpeggios:</div>
-                <div><code className="text-zinc-100">chord C4:maj 1/2</code> - Major Triad</div>
-                <div><code className="text-zinc-100">arp A3:min 1/8</code> - Arpeggio sequence</div>
-                <div><code className="text-zinc-100">loop 2 &#123; ... &#125;</code> - Loop block</div>
-              </div>
-
-              <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
-                <div className="font-bold text-amber-400">Song Parameters:</div>
-                <div><code className="text-zinc-100">tempo 120</code> - BPM</div>
-                <div><code className="text-zinc-100">meter 4/4</code> - Time Signature</div>
               </div>
             </div>
           </div>
@@ -586,7 +570,7 @@ export default function MusicStudioPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800/80 py-4 px-6 text-center text-xs text-zinc-500 flex items-center justify-between">
+      <footer className="border-t border-white/[0.06] py-4 px-6 text-center text-xs text-zinc-500 flex items-center justify-between">
         <span>NoteScript Web Music Studio &bull; MIT License</span>
         <span>FastAPI + SQLite Backend &bull; Next.js Frontend</span>
       </footer>

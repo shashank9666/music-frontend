@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { NoteEvent } from "@/lib/types";
 import { pitchToMidi } from "@/lib/compiler";
-import { Trash2, Plus, Volume2 } from "lucide-react";
+import { Trash2, Music } from "lucide-react";
 
 interface SheetCanvasProps {
   notes: NoteEvent[];
@@ -14,7 +14,6 @@ interface SheetCanvasProps {
   onUpdateNotePitch: (index: number, newPitch: string) => void;
   onUpdateNoteDuration: (index: number, newDuration: number) => void;
   onDeleteNote: (index: number) => void;
-  onAddNoteAtEnd?: () => void;
 }
 
 const ALL_PITCHES = [
@@ -48,12 +47,12 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
   const beatsPerMeasure = parseFloat(numStr) || 4;
 
   const BEAT_WIDTH = 55;
-  const STAFF_TOP = 45;
-  const LINE_SPACING = 10;
+  const STAFF_TOP = 50;
+  const LINE_SPACING = 11;
   const STAFF_HEIGHT = LINE_SPACING * 4;
 
   const totalBeats = notes.reduce((max, n) => Math.max(max, n.start_time + n.duration), 8);
-  const totalWidth = Math.max(860, (totalBeats + 4) * BEAT_WIDTH + 120);
+  const totalWidth = Math.max(880, (totalBeats + 4) * BEAT_WIDTH + 140);
 
   const getNoteY = (pitch: string, clef: "treble" | "bass") => {
     const midi = pitchToMidi(pitch);
@@ -68,19 +67,19 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Selected Note Inline Editor Toolbar */}
+      {/* Selected Note Inline Editor Toolbar - Glassmorphic Pill */}
       {selectedNote && selectedIndex !== null && (
-        <div className="bg-zinc-900 border border-amber-500/40 rounded-xl px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs shadow-lg animate-in fade-in duration-150">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold text-amber-400">
-              Editing Note #{selectedIndex + 1}:
+        <div className="glass-panel rounded-2xl px-5 py-2.5 flex flex-wrap items-center justify-between gap-4 text-xs shadow-2xl animate-in fade-in duration-200 border border-amber-500/30">
+          <div className="flex items-center gap-4">
+            <span className="font-semibold text-amber-400 flex items-center gap-1.5">
+              <Music className="w-3.5 h-3.5" /> Note #{selectedIndex + 1}
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <span className="text-zinc-400">Pitch:</span>
               <select
                 value={selectedNote.pitch}
                 onChange={(e) => onUpdateNotePitch(selectedIndex, e.target.value)}
-                className="bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-lg px-2 py-1 font-mono font-bold outline-none cursor-pointer"
+                className="bg-zinc-800/80 border border-white/10 text-zinc-100 rounded-xl px-2.5 py-1 font-mono font-bold outline-none cursor-pointer hover:bg-zinc-750 transition"
               >
                 {ALL_PITCHES.map((p) => (
                   <option key={p} value={p}>
@@ -90,12 +89,12 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-zinc-400">Length:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-zinc-400">Duration:</span>
               <select
                 value={selectedNote.duration}
                 onChange={(e) => onUpdateNoteDuration(selectedIndex, parseFloat(e.target.value))}
-                className="bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-lg px-2 py-1 font-mono outline-none cursor-pointer"
+                className="bg-zinc-800/80 border border-white/10 text-zinc-100 rounded-xl px-2.5 py-1 font-mono outline-none cursor-pointer hover:bg-zinc-750 transition"
               >
                 {DURATION_CHOICES.map((d) => (
                   <option key={d.val} value={d.val}>
@@ -109,42 +108,42 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => onDeleteNote(selectedIndex)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 transition"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 transition shadow-sm"
               title="Delete note"
             >
               <Trash2 className="w-3.5 h-3.5" /> Delete
             </button>
             <button
               onClick={() => onSelectNote(null)}
-              className="text-zinc-400 hover:text-white px-2 py-1"
+              className="text-zinc-400 hover:text-white px-3 py-1 rounded-xl hover:bg-white/5 transition"
             >
-              Done
+              Close
             </button>
           </div>
         </div>
       )}
 
-      {/* Sheet Music Canvas */}
+      {/* Sheet Music Canvas with Apple-like Glass Container */}
       <div
-        className="w-full overflow-x-auto bg-[#faf8f5] dark:bg-[#18181b] p-6 rounded-2xl border border-amber-900/10 dark:border-zinc-800 shadow-inner select-none transition-colors"
+        className="w-full overflow-x-auto glass-panel p-6 rounded-3xl shadow-2xl select-none transition-colors border border-white/10"
         ref={containerRef}
       >
-        <div className="relative min-w-max pb-4" style={{ width: totalWidth, height: 210 }}>
-          <svg width={totalWidth} height="210" className="overflow-visible">
+        <div className="relative min-w-max pb-2" style={{ width: totalWidth, height: 215 }}>
+          <svg width={totalWidth} height="215" className="overflow-visible">
             {/* Clef label */}
             <text
-              x="20"
-              y={STAFF_TOP + STAFF_HEIGHT * 0.75}
-              className="font-serif text-3xl fill-zinc-700 dark:fill-zinc-300 font-bold"
+              x="22"
+              y={STAFF_TOP + STAFF_HEIGHT * 0.72}
+              className="font-serif text-[38px] fill-zinc-300 font-bold drop-shadow"
             >
               𝄞
             </text>
 
             {/* Time Signature */}
-            <text x="50" y={STAFF_TOP + 14} className="font-bold text-sm fill-zinc-800 dark:fill-zinc-200">
+            <text x="56" y={STAFF_TOP + 15} className="font-bold text-sm fill-zinc-200">
               {timeSignature.split("/")[0]}
             </text>
-            <text x="50" y={STAFF_TOP + 34} className="font-bold text-sm fill-zinc-800 dark:fill-zinc-200">
+            <text x="56" y={STAFF_TOP + 36} className="font-bold text-sm fill-zinc-200">
               {timeSignature.split("/")[1]}
             </text>
 
@@ -154,20 +153,19 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
               return (
                 <line
                   key={`line-${i}`}
-                  x1="10"
+                  x1="12"
                   y1={y}
                   x2={totalWidth - 20}
                   y2={y}
-                  stroke="currentColor"
+                  stroke="rgba(255, 255, 255, 0.25)"
                   strokeWidth="1.2"
-                  className="text-zinc-400 dark:text-zinc-600"
                 />
               );
             })}
 
             {/* Measure Barlines */}
             {Array.from({ length: numMeasures }).map((_, mIdx) => {
-              const x = 70 + mIdx * beatsPerMeasure * BEAT_WIDTH;
+              const x = 75 + mIdx * beatsPerMeasure * BEAT_WIDTH;
               return (
                 <g key={`bar-${mIdx}`}>
                   <line
@@ -175,11 +173,10 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                     y1={STAFF_TOP}
                     x2={x}
                     y2={STAFF_TOP + STAFF_HEIGHT}
-                    stroke="currentColor"
+                    stroke="rgba(255, 255, 255, 0.2)"
                     strokeWidth="1.5"
-                    className="text-zinc-300 dark:text-zinc-700"
                   />
-                  <text x={x + 4} y={STAFF_TOP - 8} className="text-[10px] fill-zinc-400 font-mono">
+                  <text x={x + 4} y={STAFF_TOP - 10} className="text-[10px] fill-zinc-500 font-mono">
                     m.{mIdx + 1}
                   </text>
                 </g>
@@ -189,7 +186,7 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
             {/* Notes rendering */}
             {notes.map((n, idx) => {
               const isRest = n.pitch.toUpperCase() === "REST";
-              const x = 75 + n.start_time * BEAT_WIDTH;
+              const x = 80 + n.start_time * BEAT_WIDTH;
               const y = getNoteY(n.pitch, n.clef);
               const isPlaying = activeBeat >= n.start_time && activeBeat < n.start_time + n.duration;
               const isSelected = selectedIndex === idx;
@@ -204,16 +201,16 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                   >
                     <rect
                       width="8"
-                      height="14"
-                      fill={isPlaying ? "#3b82f6" : isSelected ? "#f59e0b" : "#71717a"}
-                      rx="1"
+                      height="15"
+                      fill={isPlaying ? "#60a5fa" : isSelected ? "#f59e0b" : "#71717a"}
+                      rx="2"
+                      className="transition-colors"
                     />
-                    <text x="-4" y="24" className="text-[9px] fill-zinc-400 font-mono">𝄽</text>
+                    <text x="-4" y="26" className="text-[9px] fill-zinc-500 font-mono">𝄽</text>
                   </g>
                 );
               }
 
-              const isQuarterOrShorter = n.duration <= 1.0;
               const isHalf = n.duration > 1.0 && n.duration < 4.0;
               const isWhole = n.duration >= 4.0;
 
@@ -223,17 +220,16 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                   onClick={() => onSelectNote(isSelected ? null : idx)}
                   className="cursor-pointer group"
                 >
-                  {/* Highlight ring if selected */}
+                  {/* Clean, static selection glow (No spinning dotted circles) */}
                   {isSelected && (
-                    <circle
+                    <ellipse
                       cx={x + 4}
                       cy={y}
-                      r="14"
-                      fill="none"
+                      rx="14"
+                      ry="12"
+                      fill="rgba(245, 158, 11, 0.15)"
                       stroke="#f59e0b"
-                      strokeWidth="2"
-                      strokeDasharray="3 2"
-                      className="animate-spin"
+                      strokeWidth="1.5"
                     />
                   )}
 
@@ -242,22 +238,20 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                     <line
                       x1={x - 8}
                       y1={STAFF_TOP + STAFF_HEIGHT + LINE_SPACING}
-                      x2={x + 14}
+                      x2={x + 16}
                       y2={STAFF_TOP + STAFF_HEIGHT + LINE_SPACING}
-                      stroke="currentColor"
+                      stroke="rgba(255, 255, 255, 0.3)"
                       strokeWidth="1.2"
-                      className="text-zinc-400 dark:text-zinc-600"
                     />
                   )}
                   {y < STAFF_TOP - 2 && (
                     <line
                       x1={x - 8}
                       y1={STAFF_TOP - LINE_SPACING}
-                      x2={x + 14}
+                      x2={x + 16}
                       y2={STAFF_TOP - LINE_SPACING}
-                      stroke="currentColor"
+                      stroke="rgba(255, 255, 255, 0.3)"
                       strokeWidth="1.2"
-                      className="text-zinc-400 dark:text-zinc-600"
                     />
                   )}
 
@@ -265,59 +259,65 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
                   <ellipse
                     cx={x + 4}
                     cy={y}
-                    rx="6"
-                    ry="4.5"
+                    rx="6.5"
+                    ry="5"
                     transform={`rotate(-25 ${x + 4} ${y})`}
                     fill={
                       isPlaying
-                        ? "#3b82f6"
+                        ? "#38bdf8"
                         : isSelected
                         ? "#f59e0b"
                         : isWhole || isHalf
                         ? "transparent"
-                        : "currentColor"
+                        : "#fafafa"
                     }
-                    stroke={isPlaying ? "#3b82f6" : isSelected ? "#f59e0b" : "currentColor"}
-                    strokeWidth={isWhole || isHalf ? "2" : "1"}
-                    className={`transition-all duration-75 ${
+                    stroke={
                       isPlaying
-                        ? "text-blue-500 scale-125"
+                        ? "#38bdf8"
                         : isSelected
-                        ? "text-amber-500 scale-110"
-                        : "text-zinc-900 dark:text-zinc-100 group-hover:text-amber-500"
-                    }`}
+                        ? "#f59e0b"
+                        : "#fafafa"
+                    }
+                    strokeWidth={isWhole || isHalf ? "2.2" : "1"}
+                    className="transition-all duration-100 group-hover:scale-110"
+                    style={{
+                      filter: isPlaying
+                        ? "drop-shadow(0 0 8px rgba(56, 189, 248, 0.8))"
+                        : isSelected
+                        ? "drop-shadow(0 0 6px rgba(245, 158, 11, 0.6))"
+                        : "none",
+                    }}
                   />
 
                   {/* Stem */}
                   {!isWhole && (
                     <line
-                      x1={x + 9}
+                      x1={x + 9.5}
                       y1={y}
-                      x2={x + 9}
+                      x2={x + 9.5}
                       y2={y - 28}
-                      stroke={isPlaying ? "#3b82f6" : isSelected ? "#f59e0b" : "currentColor"}
-                      strokeWidth="1.5"
-                      className={
+                      stroke={
                         isPlaying
-                          ? "text-blue-500"
+                          ? "#38bdf8"
                           : isSelected
-                          ? "text-amber-500"
-                          : "text-zinc-900 dark:text-zinc-100"
+                          ? "#f59e0b"
+                          : "#fafafa"
                       }
+                      strokeWidth="1.6"
                     />
                   )}
 
                   {/* Pitch Label */}
                   <text
                     x={x + 4}
-                    y={STAFF_TOP + STAFF_HEIGHT + 28}
+                    y={STAFF_TOP + STAFF_HEIGHT + 30}
                     textAnchor="middle"
                     className={`text-[10px] font-mono font-medium transition-colors ${
                       isPlaying
-                        ? "fill-blue-500 font-bold"
+                        ? "fill-sky-400 font-bold"
                         : isSelected
-                        ? "fill-amber-500 font-bold"
-                        : "fill-zinc-500 group-hover:fill-amber-500 dark:fill-zinc-400"
+                        ? "fill-amber-400 font-bold"
+                        : "fill-zinc-400 group-hover:fill-zinc-200"
                     }`}
                   >
                     {n.pitch}
@@ -326,20 +326,19 @@ export const SheetCanvas: React.FC<SheetCanvasProps> = ({
               );
             })}
 
-            {/* Playhead */}
+            {/* Apple-style Smooth Playhead */}
             {activeBeat >= 0 && (
-              <g transform={`translate(${75 + activeBeat * BEAT_WIDTH}, 0)`}>
+              <g transform={`translate(${80 + activeBeat * BEAT_WIDTH}, 0)`}>
                 <line
                   x1="0"
-                  y1={STAFF_TOP - 15}
+                  y1={STAFF_TOP - 16}
                   x2="0"
-                  y2={STAFF_TOP + STAFF_HEIGHT + 35}
-                  stroke="#3b82f6"
-                  strokeWidth="2.5"
-                  strokeDasharray="4 2"
-                  className="animate-pulse"
+                  y2={STAFF_TOP + STAFF_HEIGHT + 36}
+                  stroke="#38bdf8"
+                  strokeWidth="2"
+                  style={{ filter: "drop-shadow(0 0 6px rgba(56, 189, 248, 0.7))" }}
                 />
-                <polygon points="-5,15 5,15 0,25" fill="#3b82f6" />
+                <circle cx="0" cy={STAFF_TOP - 16} r="3" fill="#38bdf8" />
               </g>
             )}
           </svg>
